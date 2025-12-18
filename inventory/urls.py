@@ -25,6 +25,9 @@ urlpatterns = [
     path('issuances/issue/', views.issue_item, name='issue_item'),
     path('issuances/receive/', views.receive_item, name='receive_item'),
 
+    # Bulk delete imported items
+    path("delete-imported/", views.delete_imported_items, name="delete_imported_items"),
+
      # ... your existing urls ...
     path('import-items/', views.import_items_upload, name='import_items_upload'),
     path('import-items/mapping/', views.import_items_map, name='import_items_map'),

@@ -469,6 +469,15 @@
         <a href="{% url 'add_item' %}" class="btn btn-success-modern btn-modern pulse-hover">
             <i class="fas fa-plus-circle me-2"></i>Add New Item
         </a>
+
+        <form method="post" action="{% url 'delete_imported_items' %}"
+            onsubmit="return confirm('This will permanently delete all imported Excel data. Continue?');">
+            {% csrf_token %}
+            <button class="btn btn-danger-modern btn-modern">
+                <i class="fas fa-trash-alt me-2"></i>Delete Imported Data
+            </button>
+        </form>
+
         <a href="{% url 'dashboard' %}" class="btn btn-primary-modern btn-modern">
             <i class="fas fa-chart-dashboard me-2"></i>Dashboard Overview
         </a>
@@ -688,34 +697,34 @@
 </script> -->
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("searchInput");
-    const categoryFilter = document.getElementById("categoryFilter");
-    const tableBody = document.querySelector("#inventoryTable tbody");
+    document.addEventListener("DOMContentLoaded", function () {
+        const searchInput = document.getElementById("searchInput");
+        const categoryFilter = document.getElementById("categoryFilter");
+        const tableBody = document.querySelector("#inventoryTable tbody");
 
-    let debounceTimer = null;
+        let debounceTimer = null;
 
-    function liveSearch() {
-        const query = searchInput.value.trim();
-        const category = categoryFilter.value;
+        function liveSearch() {
+            const query = searchInput.value.trim();
+            const category = categoryFilter.value;
 
-        fetch(`/inventory/live-search/?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`)
-            .then(res => res.json())
-            .then(data => {
-                tableBody.innerHTML = data.html;
+            fetch(`/inventory/live-search/?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`)
+                .then(res => res.json())
+                .then(data => {
+                    tableBody.innerHTML = data.html;
 
-                // 🔑 KEEP CURSOR WHERE IT IS
-                searchInput.focus();
-            });
-    }
+                    // 🔑 KEEP CURSOR WHERE IT IS
+                    searchInput.focus();
+                });
+        }
 
-    searchInput.addEventListener("input", function () {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(liveSearch, 300);
+        searchInput.addEventListener("input", function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(liveSearch, 300);
+        });
+
+        categoryFilter.addEventListener("change", liveSearch);
     });
-
-    categoryFilter.addEventListener("change", liveSearch);
-});
 </script>
 
 

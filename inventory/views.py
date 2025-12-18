@@ -13,6 +13,7 @@ from .forms import ExcelUploadForm, ColumnMappingForm
 from .utils import get_all_categories
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 # Predefined categories for dropdown
 PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
@@ -182,6 +183,9 @@ def import_items_map(request):
                 item_data.setdefault('quantity', 0)
                 item_data.setdefault('reorder_level', 0)
                 item_data.setdefault('unit_price', 0.0)
+
+                item_data['is_imported'] = True # mark as imported
+
                 # Validate (basic)
                 try:
                     Item.objects.create(**item_data)
@@ -519,3 +523,24 @@ def receive_item(request):
 
     messages.success(request, f"Issuance #{issuance.pk} marked received as {status.upper()}. Stock updated.")
     return redirect('issuance_list')
+
+
+#bulk delete imported items
+def delete_imported_items(request):
+    """
+    Deletes all items that were imported via Excel.
+    """
+    if request.method == "POST":
+        with transaction.atomic():
+            qs = Item.objects.filter(is_imported=True)
+            count = qs.count()
+            qs.delete()
+
+        messages.success(
+            request,
+            f"{count} imported items deleted successfully."
+        )
+    else:
+        messages.error(request, "Invalid request.")
+
+    return redirect("inventory_list")

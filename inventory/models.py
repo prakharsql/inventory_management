@@ -22,6 +22,7 @@ class Item(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     storage_location = models.CharField(max_length=10, blank=True, null=True, editable=False)#Transaction
     
+    is_imported = models.BooleanField(default=False) # To track if the item was imported via CSV
 
     def save(self, *args, **kwargs):     
         # ✅ Handle custom category
