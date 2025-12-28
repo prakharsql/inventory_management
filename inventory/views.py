@@ -325,23 +325,31 @@ def inventory_live_search(request):
 
 
 def add_item(request):
+    # if request.method == "POST":
+    #     name = request.POST.get('name')
+    #     category = request.POST.get('category')
+    #     # custom_category = request.POST.get('custom_category')
+    #     quantity = request.POST.get('quantity')
+    #     reorder_level = request.POST.get('reorder_level')
+    #     unit_price = request.POST.get('unit_price')
+    #     # supplier = request.POST.get('supplier')
+    #     location = request.POST.get('location')
+    #     # description = request.POST.get('description')
+
     if request.method == "POST":
         name = request.POST.get('name')
         category = request.POST.get('category')
-        # custom_category = request.POST.get('custom_category')
-        quantity = request.POST.get('quantity')
-        reorder_level = request.POST.get('reorder_level')
-        unit_price = request.POST.get('unit_price')
-        # supplier = request.POST.get('supplier')
-        location = request.POST.get('location')
-        # description = request.POST.get('description')
+        custom_category = request.POST.get('custom_category')
 
         try:
-            quantity = int(quantity)
-            reorder_level = int(reorder_level)
-            unit_price = float(unit_price)
-        except ValueError:
-            messages.error(request, "Please enter valid numbers for quantity, reorder level, and unit price.")
+            quantity = int(request.POST.get('quantity'))
+            reorder_level = int(request.POST.get('reorder_level'))
+            unit_price = float(request.POST.get('unit_price'))
+        except (TypeError, ValueError):
+            messages.error(
+                request,
+                "Please enter valid numbers for quantity, reorder level, and unit price."
+            )
             return redirect('add_item')
 
         if quantity < 0 or reorder_level < 0 or unit_price < 0:
@@ -349,24 +357,28 @@ def add_item(request):
             return redirect('add_item')
 
         #FINAL CATEGORY LOGIC
+        final_category = (
+            custom_category.strip()
+            if category == "Other" and custom_category
+            else category
+        )
         # final_category = custom_category.strip() if category == "Other" and custom_category else category
 
         Item.objects.create(
             name=name,
-            category=category,
+            category=final_category,
             quantity=quantity,
             reorder_level=reorder_level,
             unit_price=unit_price,
-            # supplier=supplier,
-            location=location,
-            # description=description
+            location=request.POST.get('location')
         )
+
         messages.success(request, "Item added successfully!")
         return redirect('inventory_list')
-    context = {
-        'CATEGORIES': get_all_categories(),  # 🔥 dynamic categories
-    }
-    return render(request, 'inventory/add_item.html',context) #
+    
+    return render(request, 'inventory/add_item.html', {
+        'CATEGORIES': get_all_categories(),
+    })
 
 
 def edit_item(request, item_id):
@@ -376,20 +388,24 @@ def edit_item(request, item_id):
         category = request.POST.get('category')
         custom_category = request.POST.get('custom_category')
         item.category = custom_category if category == "Other" and custom_category else category
-        item.quantity = request.POST.get('quantity')
-        item.reorder_level = request.POST.get('reorder_level')
-        item.unit_price = request.POST.get('unit_price')
-        # item.supplier = request.POST.get('supplier')
+        try:
+            item.quantity = int(request.POST.get('quantity'))
+            item.reorder_level = int(request.POST.get('reorder_level'))
+            item.unit_price = float(request.POST.get('unit_price'))
+        except (TypeError, ValueError):
+            messages.error(request, "Please enter valid numeric values.")
+            return redirect('edit_item', item_id=item.id)
+
         item.location = request.POST.get('location')
-        # item.description = request.POST.get('description')
+
         item.save()
         messages.success(request, "Item updated successfully!")
         return redirect('inventory_list')
-   
-    return render(request, 'inventory/edit_item.html',{
+
+    return render(request, 'inventory/edit_item.html', {
         'item': item,
         'CATEGORIES': get_all_categories(),
-    }) 
+    })
 
 
 def delete_item(request, item_id):

@@ -111,21 +111,23 @@
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="category" class="text-primary">Category</label>
-                <select id="category" name="category" class="form-select shadow-sm border-0"
+                <label class="text-primary">Category</label>
+                <select name="category" class="form-select shadow-sm border-0"
                     onchange="toggleCustomCategory(this)" required>
                     <option value="">Select Category</option>
                     
                     {% for category in CATEGORIES %}
-                    <option value="{{ category }}">{{ category }}</option>
+                    <option value="{{ cat }}">{{ cat }}</option>
                     {% endfor %}
 
                     <option value="Other">+ Add New Category</option>
                 </select>
 
-                <div class="mt-2" id="custom-category-div" style="display: none;">
-                    <input type="text" name="custom_category" id="custom_category"
-                        class="form-control shadow-sm border-0" placeholder="Enter custom category">
+                <div class="mt-2 d-none" id="custom-category-div">
+                    <input type="text" name="custom_category"
+                           id="custom_category"
+                           class="form-control shadow-sm border-0"
+                           placeholder="Enter custom category">
                 </div>
             </div>
         </div>
@@ -134,40 +136,31 @@
         <div class="row mb-3">
             <div class="col-md-4 mb-3">
                 <label class="text-success">Quantity</label>
-                <input type="number" name="quantity" class="form-control shadow-sm border-0"
-                    placeholder="Enter quantity" required>
+                <input type="number" name="quantity"
+                       class="form-control shadow-sm border-0"
+                       required>
             </div>
             <div class="col-md-4 mb-3">
                 <label class="text-warning">Reorder Level</label>
-                <input type="number" name="reorder_level" class="form-control shadow-sm border-0"
-                    placeholder="Enter reorder level" required>
+                <input type="number" name="reorder_level"
+                       class="form-control shadow-sm border-0"
+                       required>
             </div>
             <div class="col-md-4 mb-3">
                 <label class="text-info">Unit Price</label>
-                <input type="number" name="unit_price" step="0.01" class="form-control shadow-sm border-0"
-                    placeholder="Enter unit price" required>
+                <input type="number" step="0.01" name="unit_price"
+                       class="form-control shadow-sm border-0"
+                       required>
             </div>
         </div>
 
-        <!-- Supplier & Location -->
+        <!-- Location -->
         <div class="row mb-3">
-            <div class="col-md-6 mb-3">
-                <label class="text-secondary">Supplier</label>
-                <input type="text" name="supplier" class="form-control shadow-sm border-0"
-                    placeholder="Enter supplier name" required>
-            </div>
             <div class="col-md-6 mb-3">
                 <label class="text-secondary">Storage Location</label>
                 <input type="text" name="location" class="form-control shadow-sm border-0"
                     placeholder="Enter storage location">
             </div>
-        </div>
-
-        <!-- Description -->
-        <div class="mb-4">
-            <label class="text-muted">Description</label>
-            <textarea name="description" class="form-control shadow-sm border-0" rows="4"
-                placeholder="Enter item description"></textarea>
         </div>
 
         <!-- Buttons -->
@@ -180,20 +173,21 @@
                 ✖ Cancel
             </a>
         </div>
-
     </form>
 </div>
 
 <script>
-    function toggleCustomCategory(select) {
-        var customDiv = document.getElementById('custom-category-div');
-        if (select.value === 'Other') {
-            customDiv.style.display = 'block';
-        } else {
-            customDiv.style.display = 'none';
-            document.getElementById('custom_category').value = '';
-        }
+function toggleCustomCategory(select) {
+    const customDiv = document.getElementById('custom-category-div');
+    const customInput = document.getElementById('custom_category');
+
+    if (select.value === 'Other') {
+        customDiv.classList.remove('d-none');
+    } else {
+        customDiv.classList.add('d-none');
+        customInput.value = '';
     }
+}
 </script>
 
 {% endblock %}
