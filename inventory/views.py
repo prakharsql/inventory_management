@@ -24,16 +24,17 @@ PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
 
 # Fields you allow to import and their friendly labels.
 # Keys are model field names, values are display labels in mapping UI.
+
 IMPORTABLE_FIELDS = {
-    'name': 'Name',
-    'category': 'Category',
-    'quantity': 'Quantity',
-    'reorder_level': 'Reorder Level',
-    'unit_price': 'Unit Price',
-    'supplier': 'Supplier',
-    'location': 'Storage Location',
-    'description': 'Description',
+    'id': 'Item ID (Auto)',
+    'name': 'Item Name (Required)',
+    'category': 'Item Category',
+    'quantity': 'Initial Stock',
+    'reorder_level': 'Minimum Stock Level',
+    'unit_price': 'Unit Price (₹)',
+    'location': 'Storage Location / Rack',
 }
+
 
 ALLOWED_EXTENSIONS = ('.xlsx', '.xls', '.csv')
 MAX_ROWS_PREVIEW = 5

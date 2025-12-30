@@ -2,36 +2,592 @@
 {% load static %}
 {% block content %}
 
-<div class="container py-5">
-  <h2>Import Items from Excel</h2>
+<style>
+    :root {
+        --primary: #4361ee;
+        --secondary: #3a0ca3;
+        --success: #4cc9a7;
+        --warning: #f7a900;
+        --danger: #f72585;
+        --info: #4cc9f0;
+        --dark: #1a1a2e;
+        --light: #f8f9fa;
+        --gradient-primary: linear-gradient(135deg, #4361ee, #3a0ca3);
+        --gradient-success: linear-gradient(135deg, #4cc9a7, #38b2ac);
+        --gradient-warning: linear-gradient(135deg, #f7a900, #f48c06);
+        --gradient-danger: linear-gradient(135deg, #f72585, #b5179e);
+        --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
 
-  <form method="post" enctype="multipart/form-data" class="card p-4">
-    {% csrf_token %}
+    /* Animations */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">
-        {{ form.non_field_errors }}
-      </div>
-    {% endif %}
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
 
-    <div class="mb-3">
-      {{ form.file.label_tag }}
-      {{ form.file }}
-    </div>
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
 
-    <div class="mb-3 form-check">
-      {{ form.has_header }}
-      {{ form.has_header.label_tag }}
-    </div>
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
 
-    <button class="btn btn-primary" type="submit">
-      Upload & Preview
-    </button>
+    /* Base Styles */
+    .fade-in-up {
+        animation: fadeInUp 0.8s ease-out;
+    }
 
-    <a href="{% url 'inventory_list' %}" class="btn btn-secondary">
-      Cancel
-    </a>
-  </form>
+    .slide-in-right {
+        animation: slideInRight 0.8s ease-out;
+    }
+
+    .pulse-hover:hover {
+        animation: pulse 0.6s ease-in-out;
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #fff, #e0f7ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        position: relative;
+    }
+
+    .gradient-text::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 4px;
+        background: var(--gradient-success);
+        border-radius: 2px;
+    }
+
+    /* Modern Form Card */
+    .form-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: var(--gradient-primary);
+    }
+
+    /* Form Groups */
+    .form-group-enhanced {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label-enhanced {
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    /* File Upload Styling */
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        background: white;
+        box-shadow: var(--shadow-soft);
+        border: 2px dashed #e9ecef;
+        transition: all 0.3s ease;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .file-upload-wrapper:hover {
+        border-color: var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .file-upload-wrapper.drag-over {
+        border-color: var(--success);
+        background: rgba(76, 201, 167, 0.05);
+    }
+
+    .file-upload-icon {
+        font-size: 3rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .file-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .file-name {
+        margin-top: 1rem;
+        font-weight: 500;
+        color: var(--primary);
+        word-break: break-word;
+    }
+
+    /* Checkbox Styling */
+    .checkbox-enhanced {
+        position: relative;
+        padding-left: 2.5rem;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        min-height: 2rem;
+    }
+
+    .checkbox-enhanced input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+    .checkmark {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 1.5rem;
+        width: 1.5rem;
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .checkbox-enhanced:hover .checkmark {
+        border-color: var(--primary);
+        transform: scale(1.1);
+    }
+
+    .checkbox-enhanced input:checked ~ .checkmark {
+        background: var(--gradient-primary);
+        border-color: var(--primary);
+    }
+
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 0.5rem;
+        top: 0.25rem;
+        width: 0.5rem;
+        height: 0.8rem;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .checkbox-enhanced input:checked ~ .checkmark:after {
+        display: block;
+    }
+
+    /* Modern Buttons */
+    .btn-modern {
+        border: none;
+        border-radius: 16px;
+        padding: 14px 32px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-medium);
+        min-width: 140px;
+    }
+
+    .btn-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-modern:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary-modern {
+        background: var(--gradient-primary);
+        color: white;
+    }
+
+    .btn-secondary-modern {
+        background: var(--gradient-warning);
+        color: white;
+    }
+
+    .btn-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-strong);
+        color: white;
+    }
+
+    /* Alert Styling */
+    .alert-enhanced {
+        border-radius: 16px;
+        border: none;
+        padding: 1.25rem 1.5rem;
+        box-shadow: var(--shadow-soft);
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(247, 37, 133, 0.1), rgba(181, 23, 158, 0.1));
+        border-left: 4px solid var(--danger);
+        color: var(--danger);
+    }
+
+    /* Helper Text */
+    .helper-text {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+        display: block;
+    }
+
+    /* Background Elements */
+    .bg-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+    }
+
+    .shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: 0.1;
+    }
+
+    .shape-1 {
+        width: 300px;
+        height: 300px;
+        background: var(--primary);
+        top: 10%;
+        left: 10%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .shape-2 {
+        width: 200px;
+        height: 200px;
+        background: var(--success);
+        top: 60%;
+        right: 10%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    .shape-3 {
+        width: 150px;
+        height: 150px;
+        background: var(--warning);
+        bottom: 20%;
+        left: 20%;
+        animation: float 5s ease-in-out infinite;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .container {
+            padding: 20px;
+        }
+        
+        .form-card {
+            margin: 0 10px;
+            padding: 1.5rem !important;
+        }
+        
+        .btn-modern {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .file-upload-wrapper {
+            padding: 1.5rem;
+        }
+        
+        .file-upload-icon {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+
+<!-- Background Shapes -->
+<div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
 </div>
+
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="text-center mb-5 fade-in-up">
+        <h1 class="gradient-text text-dark fw-bold display-4 mb-4">
+            Import Inventory Items
+        </h1>
+        <p class="text-dark fs-5">Upload Excel files to import multiple items at once</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <form method="post" enctype="multipart/form-data" class="form-card p-5 fade-in-up" style="animation-delay: 0.2s;">
+                {% csrf_token %}
+
+                <!-- Error Display -->
+                {% if form.non_field_errors %}
+                <div class="alert-enhanced alert-danger mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-3 fa-lg"></i>
+                        <div>
+                            <strong class="d-block mb-1">Import Error</strong>
+                            {{ form.non_field_errors }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- File Upload Section -->
+                <div class="form-group-enhanced mb-4">
+                    <label class="form-label-enhanced">
+                        <i class="fas fa-file-excel me-2 text-success"></i>Excel File
+                    </label>
+                    
+                    <div class="file-upload-wrapper" id="fileUploadWrapper">
+                        <input type="file" name="file" class="file-input" id="fileInput" accept=".xlsx,.xls,.csv" required>
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h5 class="mb-2">Choose an Excel File</h5>
+                        <p class="text-muted mb-3">
+                            Drag & drop your file here or click to browse
+                        </p>
+                        <div class="mb-2">
+                            <span class="badge bg-primary me-2">.xlsx</span>
+                            <span class="badge bg-primary me-2">.xls</span>
+                            <span class="badge bg-primary">.csv</span>
+                        </div>
+                        <div class="file-name" id="fileName">No file chosen</div>
+                    </div>
+                    <span class="helper-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        File should contain columns: Name, Category, Quantity, etc.
+                    </span>
+                </div>
+
+                <!-- Header Checkbox -->
+                <div class="form-group-enhanced mb-5">
+                    <label class="checkbox-enhanced">
+                        {{ form.has_header }}
+                        <span class="checkmark"></span>
+                        <div class="ms-2">
+                            <strong>Excel file contains header row</strong>
+                            <p class="text-muted mb-0 small">
+                                Check this if the first row in your Excel file contains column names
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Form Instructions -->
+                <div class="alert alert-info border-0 rounded-3 mb-4" style="background: rgba(67, 97, 238, 0.1);">
+                    <div class="d-flex">
+                        <i class="fas fa-lightbulb me-3 text-primary fa-lg"></i>
+                        <div>
+                            <strong class="d-block mb-1">Import Instructions</strong>
+                            <p class="mb-0 small">
+                                1. Prepare your Excel file with proper columns<br>
+                                2. Upload the file using the drag & drop area above<br>
+                                3. Preview data before final import<br>
+                                4. Review and confirm the import
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-between align-items-center pt-3">
+                    <button type="submit" class="btn btn-primary-modern btn-modern pulse-hover">
+                        <i class="fas fa-upload me-2"></i>Upload & Preview
+                    </button>
+                    <a href="{% url 'inventory_list' %}" class="btn btn-secondary-modern btn-modern">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const fileUploadWrapper = document.getElementById('fileUploadWrapper');
+        
+        // File input change handler
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                fileName.textContent = file.name;
+                fileName.classList.add('text-success');
+                
+                // Add file icon based on type
+                const icon = fileName.querySelector('i');
+                if (icon) icon.remove();
+                
+                const fileIcon = document.createElement('i');
+                fileIcon.className = 'fas me-2';
+                
+                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                    fileIcon.className += ' fa-file-excel';
+                    fileIcon.style.color = '#28a745';
+                } else if (file.name.endsWith('.csv')) {
+                    fileIcon.className += ' fa-file-csv';
+                    fileIcon.style.color = '#17a2b8';
+                } else {
+                    fileIcon.className += ' fa-file';
+                    fileIcon.style.color = '#6c757d';
+                }
+                
+                fileName.insertBefore(fileIcon, fileName.firstChild);
+            } else {
+                fileName.textContent = 'No file chosen';
+                fileName.classList.remove('text-success');
+            }
+        });
+        
+        // Drag and drop functionality
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            fileUploadWrapper.classList.add('drag-over');
+        }
+        
+        function unhighlight() {
+            fileUploadWrapper.classList.remove('drag-over');
+        }
+        
+        // Handle drop
+        fileUploadWrapper.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+        
+        // Form submission loading state
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                fileUploadWrapper.style.borderColor = 'var(--danger)';
+                fileUploadWrapper.style.animation = 'shake 0.5s ease-in-out';
+                setTimeout(() => {
+                    fileUploadWrapper.style.animation = '';
+                }, 500);
+                return;
+            }
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Add loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds in case submission fails
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
 
 {% endblock %}

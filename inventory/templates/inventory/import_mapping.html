@@ -2,48 +2,630 @@
 {% load static %}
 {% block content %}
 
-<div class="container py-5">
-  <h2>Map Excel columns to your Item fields</h2>
-  <p>File: <strong>{{ filename }}</strong></p>
+<style>
+    :root {
+        --primary: #4361ee;
+        --secondary: #3a0ca3;
+        --success: #4cc9a7;
+        --warning: #f7a900;
+        --danger: #f72585;
+        --info: #4cc9f0;
+        --dark: #1a1a2e;
+        --light: #f8f9fa;
+        --gradient-primary: linear-gradient(135deg, #4361ee, #3a0ca3);
+        --gradient-success: linear-gradient(135deg, #4cc9a7, #38b2ac);
+        --gradient-warning: linear-gradient(135deg, #f7a900, #f48c06);
+        --gradient-danger: linear-gradient(135deg, #f72585, #b5179e);
+        --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
 
-  <form method="post" action="{% url 'import_items_map' %}">
-    {% csrf_token %}
+    /* Animations */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>Excel Column</th>
-          <th>Map to field</th>
-        </tr>
-      </thead>
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
 
-      <tbody>
-        {% for col in cols %}
-        {% with col_index=forloop.counter0 %}
-        <tr>
-          <td style="min-width:200px;">
-            <strong>{{ col }}</strong>
-          </td>
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
 
-          <td>
-            <select name="map_{{ col_index }}" class="form-select">
-              <option value="">-- skip --</option>
-              {% for field_name, label in importable_fields.items %}
-                <option value="{{ field_name }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-          </td>
-        </tr>
-        {% endwith %}
-        {% endfor %}
-      </tbody>
-    </table>
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
 
-    <div class="mt-3">
-      <button class="btn btn-success" type="submit">Import mapped rows</button>
-      <a href="{% url 'import_items_upload' %}" class="btn btn-secondary">Back</a>
-    </div>
-  </form>
+    /* Base Styles */
+    .fade-in-up {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .slide-in-right {
+        animation: slideInRight 0.8s ease-out;
+    }
+
+    .pulse-hover:hover {
+        animation: pulse 0.6s ease-in-out;
+    }
+
+    .float-animation {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, #fff, #e0f7ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        position: relative;
+    }
+
+    .gradient-text::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 4px;
+        background: var(--gradient-primary);
+        border-radius: 2px;
+    }
+
+    /* Modern Form Container */
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        box-shadow: var(--shadow-strong);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        position: relative;
+        padding: 2.5rem;
+    }
+
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: var(--gradient-primary);
+    }
+
+    /* File Info Card */
+    .file-info-card {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(58, 12, 163, 0.1));
+        border-radius: 16px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--primary);
+        margin-bottom: 2rem;
+        animation: slideInRight 0.6s ease-out;
+    }
+
+    /* Enhanced Table */
+    .table-enhanced {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: var(--shadow-soft);
+        border: none;
+        background: white;
+        margin: 2rem 0;
+    }
+
+    .table-enhanced thead {
+        background: var(--gradient-primary);
+    }
+
+    .table-enhanced thead th {
+        border: none;
+        padding: 1.25rem 1rem;
+        font-weight: 600;
+        color: white;
+        text-align: left;
+        font-size: 1rem;
+        position: relative;
+    }
+
+    .table-enhanced thead th::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .table-enhanced tbody tr {
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .table-enhanced tbody tr:hover {
+        transform: translateX(5px);
+        border-left: 3px solid var(--primary);
+        background: rgba(67, 97, 238, 0.02);
+        box-shadow: var(--shadow-soft);
+    }
+
+    .table-enhanced tbody td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+
+    /* Column Name Styling */
+    .column-name {
+        font-weight: 600;
+        color: var(--dark);
+        background: rgba(67, 97, 238, 0.08);
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        display: inline-block;
+        border: 1px solid rgba(67, 97, 238, 0.2);
+    }
+
+    /* Enhanced Select */
+    .select-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+        box-shadow: var(--shadow-soft);
+        width: 100%;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234361ee' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 14px;
+    }
+
+    .select-enhanced:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        background: white;
+        outline: none;
+    }
+
+    .select-enhanced:hover {
+        border-color: #c5cae9;
+    }
+
+    /* Modern Buttons */
+    .btn-modern {
+        border: none;
+        border-radius: 16px;
+        padding: 14px 32px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-medium);
+        min-width: 140px;
+    }
+
+    .btn-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-modern:hover::before {
+        left: 100%;
+    }
+
+    .btn-success-modern {
+        background: var(--gradient-success);
+        color: white;
+    }
+
+    .btn-secondary-modern {
+        background: var(--gradient-warning);
+        color: white;
+    }
+
+    .btn-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-strong);
+        color: white;
+    }
+
+    /* Field Options Styling */
+    .field-option {
+        transition: all 0.2s ease;
+    }
+
+    .field-option:hover {
+        background: rgba(67, 97, 238, 0.05);
+    }
+
+    /* Instructions Panel */
+    .instructions-panel {
+        background: linear-gradient(135deg, rgba(76, 201, 240, 0.1), rgba(58, 12, 163, 0.05));
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--info);
+    }
+
+    /* Background Elements */
+    .bg-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+    }
+
+    .shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(40px);
+        opacity: 0.1;
+    }
+
+    .shape-1 {
+        width: 300px;
+        height: 300px;
+        background: var(--primary);
+        top: 10%;
+        left: 10%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .shape-2 {
+        width: 200px;
+        height: 200px;
+        background: var(--success);
+        top: 60%;
+        right: 10%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    .shape-3 {
+        width: 150px;
+        height: 150px;
+        background: var(--warning);
+        bottom: 20%;
+        left: 20%;
+        animation: float 5s ease-in-out infinite;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .container {
+            padding: 20px;
+        }
+        
+        .form-container {
+            padding: 1.5rem;
+            margin: 0 10px;
+        }
+        
+        .table-responsive {
+            margin: 0 -15px;
+            padding: 0 15px;
+        }
+        
+        .table-enhanced thead th,
+        .table-enhanced tbody td {
+            padding: 1rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-modern {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .column-name {
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+
+    /* Custom scrollbar for table */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        margin: 0 1rem;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: var(--gradient-primary);
+        border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: var(--secondary);
+    }
+
+    /* Skip option styling */
+    option[value=""] {
+        color: #6c757d;
+        font-style: italic;
+    }
+</style>
+
+<!-- Background Shapes -->
+<div class="bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
 </div>
+
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="text-center mb-5 fade-in-up">
+        <h1 class="gradient-text text-dark  fw-bold display-4 mb-4">
+            Map Excel Columns
+        </h1>
+        <p class="text-dark fs-5">Match your Excel columns with inventory fields</p>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="form-container fade-in-up" style="animation-delay: 0.1s;">
+                <!-- File Information -->
+                <div class="file-info-card">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file-excel me-3 text-success fa-2x"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">File Ready for Mapping</h5>
+                            <p class="mb-0 text-muted">
+                                <i class="fas fa-file me-1"></i>Filename: 
+                                <span class="fw-semibold text-dark">{{ filename }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="instructions-panel slide-in-right" style="animation-delay: 0.2s;">
+                    <div class="d-flex">
+                        <i class="fas fa-lightbulb me-3 text-warning fa-lg"></i>
+                        <div>
+                            <h6 class="fw-bold mb-2">How to Map Columns</h6>
+                            <p class="mb-0 small">
+                                1. For each Excel column, select the corresponding inventory field<br>
+                                2. Choose "-- skip --" to ignore columns you don't need<br>
+                                3. Required fields: <strong>Name</strong> and <strong>Quantity</strong><br>
+                                4. Review all mappings before proceeding
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mapping Form -->
+                <form method="post" action="{% url 'import_items_map' %}">
+                    {% csrf_token %}
+
+                    <div class="table-responsive">
+                        <table class="table table-enhanced">
+                            <thead>
+                                <tr>
+                                    <th style="width: 35%;">
+                                        <i class="fas fa-columns me-2"></i>Excel Column
+                                    </th>
+                                    <th style="width: 65%;">
+                                        <i class="fas fa-map-marked-alt me-2"></i>Map to Inventory Field
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for col in cols %}
+                                {% with col_index=forloop.counter0 %}
+                                <tr class="fade-in-up" >
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3 text-primary">
+                                                <i class="fas fa-arrow-right fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <span class="column-name">
+                                                    <i class="fas fa-heading me-2"></i>{{ col }}
+                                                </span>
+                                                <small class="d-block text-muted mt-1">
+                                                    Column {{ forloop.counter }} in Excel
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <select name="map_{{ col_index }}" class="select-enhanced field-option" required>
+                                            <option value="" selected disabled>-- Select field to map --</option>
+                                            <option value="">-- skip this column --</option>
+                                            {% for field_name, label in importable_fields.items %}
+                                            <option value="{{ field_name }}" class="field-option">
+                                                {{ label }}
+                                                {% if field_name == 'name' or field_name == 'quantity' %}
+                                                <span class="text-danger">*</span>
+                                                {% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        
+                                        {% with col_index=forloop.counter0 %}
+                                        {% for field_name, label in importable_fields.items %}
+                                        {% if forloop.first %}
+                                        <small class="text-muted mt-2 d-block">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Choose the inventory field that matches this Excel column
+                                        </small>
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-3">
+                        <button class="btn btn-success-modern btn-modern pulse-hover" type="submit">
+                            <i class="fas fa-check-double me-2"></i>Import Mapped Data
+                        </button>
+                        <a href="{% url 'import_items_upload' %}" class="btn btn-secondary-modern btn-modern">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Upload
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add visual feedback when selecting options
+        const selectElements = document.querySelectorAll('.select-enhanced');
+        
+        selectElements.forEach(select => {
+            select.addEventListener('change', function() {
+                if (this.value === '') {
+                    this.style.borderColor = '#6c757d';
+                    this.style.backgroundColor = '#f8f9fa';
+                } else {
+                    this.style.borderColor = 'var(--success)';
+                    this.style.backgroundColor = 'rgba(76, 201, 167, 0.05)';
+                }
+            });
+            
+            // Trigger change event to set initial state
+            select.dispatchEvent(new Event('change'));
+        });
+
+        // Form submission enhancement
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            let hasRequiredFields = true;
+            const requiredFields = ['name', 'quantity'];
+            
+            // Check if required fields are mapped
+            requiredFields.forEach(fieldName => {
+                let fieldMapped = false;
+                selectElements.forEach(select => {
+                    if (select.value === fieldName) {
+                        fieldMapped = true;
+                    }
+                });
+                
+                if (!fieldMapped) {
+                    hasRequiredFields = false;
+                    // Highlight all selects to show missing required field
+                    selectElements.forEach(select => {
+                        select.style.animation = 'shake 0.5s ease-in-out';
+                        setTimeout(() => {
+                            select.style.animation = '';
+                        }, 500);
+                    });
+                }
+            });
+            
+            if (!hasRequiredFields) {
+                e.preventDefault();
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                errorDiv.innerHTML = `
+                    <strong><i class="fas fa-exclamation-triangle me-2"></i>Required Fields Missing</strong>
+                    <p class="mb-0 small">Please map at least <strong>Name</strong> and <strong>Quantity</strong> fields before importing.</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const existingAlert = document.querySelector('.alert-danger');
+                if (!existingAlert) {
+                    form.insertBefore(errorDiv, form.querySelector('.d-flex'));
+                }
+                
+                // Scroll to error
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
+            // Add loading state to submit button
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Importing Data...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds in case submission fails
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+            
+            /* Highlight required fields in dropdown */
+            option[value="name"], option[value="quantity"] {
+                font-weight: 600;
+                background: rgba(220, 53, 69, 0.1);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Auto-focus first select element
+        if (selectElements.length > 0) {
+            selectElements[0].focus();
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName === 'SELECT') {
+                e.preventDefault();
+                const currentSelect = e.target;
+                const nextSelect = currentSelect.closest('tr').nextElementSibling?.querySelector('select');
+                if (nextSelect) {
+                    nextSelect.focus();
+                }
+            }
+        });
+    });
+</script>
 
 {% endblock %}
