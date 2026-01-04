@@ -49,40 +49,84 @@
         letter-spacing: 0.5px;
     }
 
-    /* Filter Card */
+      /* Search & Filter Card */
     .search-filter-card {
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(12px);
-        border-radius: 18px;
-        padding: 20px 25px;
-        box-shadow: var(--shadow-medium);
-        margin-bottom: 30px;
-        animation: fadeInUp 0.8s ease;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--shadow-strong);
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
     }
 
-    .search-filter-card input,
-    .search-filter-card select {
+    .search-filter-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+    }
+
+    .search-input-group {
+        position: relative;
         flex: 1;
-        min-width: 220px;
+        min-width: 250px;
+    }
+
+    .search-input-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        z-index: 2;
+    }
+
+    .search-input-group input,
+    .filter-select-group select {
+        width: 100%;
+        padding: 12px 20px 12px 45px;
+        border: 2px solid #e9ecef;
         border-radius: 12px;
-        border: 1px solid #d1d5db;
-        padding: 10px 12px;
         font-size: 0.95rem;
-        background: #f8faff;
-        transition: all 0.25s ease-in-out;
+        transition: all 0.3s ease;
+        background: white;
     }
 
-    .search-filter-card input:focus,
-    .search-filter-card select:focus {
+    .search-input-group input:focus,
+    .filter-select-group select:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 10px rgba(67, 97, 238, 0.25);
-        background: #fff;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
     }
 
+    .filter-select-group {
+        position: relative;
+        min-width: 200px;
+    }
+
+    .filter-select-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        z-index: 2;
+    }
+
+    .filter-select-group select {
+        padding-left: 45px;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%234361ee' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 12px;
+    }
     .input-icon {
         font-size: 1.1rem;
         color: var(--secondary);
@@ -202,7 +246,7 @@
     </div>
 
     <!-- Search & Filter -->
-    <div class="search-filter-card">
+    <!-- <div class="search-filter-card">
         <div class="d-flex align-items-center flex-grow-1">
             <i class="fa-solid fa-magnifying-glass input-icon"></i>
             <input type="text" id="searchInput" placeholder="Search by item name...">
@@ -216,7 +260,32 @@
                 {% endfor %}
             </select>
         </div>
-    </div>
+    </div> -->
+     <!-- Search & Filter Card -->
+    <form method="get" class="search-filter-card fade-in-up" style="animation-delay: 0.1s;">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="search-input-group">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search by item name..."
+                        value="{{ query }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="filter-select-group">
+                    <i class="fas fa-filter"></i>
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in CATEGORIES %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
 
     <!-- Table -->
     <div class="table-responsive">
@@ -276,45 +345,97 @@
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
+     <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="d-flex justify-content-center mt-5 fade-in-up" style="animation-delay: 0.4s;">
         <ul class="pagination pagination-modern">
             {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">« Prev</a></li>
-            {% endif %}
-            <li class="page-item disabled">
-                <a class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.previous_page_number }}&search={{ search }}&category={{ category }}">
+                    <i class="fas fa-chevron-left me-1"></i>Previous
+                </a>
             </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}&search={{ search }}&category={{ category }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
             {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next »</a></li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ page_obj.next_page_number }}&search={{ search }}&category={{ category }}">
+                    Next<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </li>
             {% endif %}
         </ul>
     </div>
+    {% endif %}
 </div>
 
 <!-- Filtering Script -->
 <script>
-    const searchInput = document.getElementById("searchInput");
-    const categoryFilter = document.getElementById("categoryFilter");
-    const tableRows = document.querySelectorAll("#transactionTable tbody tr");
+    document.addEventListener("DOMContentLoaded", function () {
 
-    function filterTable() {
-        const searchValue = searchInput.value.toLowerCase().trim();
-        const categoryValue = categoryFilter.value.toLowerCase().trim();
+        const searchInput = document.getElementById("searchInput");
+        const categoryFilter = document.getElementById("categoryFilter");
+        const tableBody = document.querySelector("#transactionTable tbody");
 
-        tableRows.forEach(row => {
-            const rowText = row.innerText.toLowerCase();  // all columns text
-            const itemCategory = row.querySelector(".item-category")?.innerText.toLowerCase().trim() || "";
+        if (!searchInput || !categoryFilter || !tableBody) return;
 
-            const matchesSearch = rowText.includes(searchValue);
-            const matchesCategory = categoryValue === "" || itemCategory.includes(categoryValue);
+        let debounceTimer = null;
 
-            row.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+        function liveSearch() {
+            const query = searchInput.value.trim();
+            const category = categoryFilter.value;
+
+            fetch(`/transactions/live-search/?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Search failed");
+                    return res.json();
+                })
+                .then(data => {
+                    tableBody.innerHTML = data.html;
+
+                    // 🔑 keep cursor & UX smooth
+                    searchInput.focus();
+                })
+                .catch(() => {
+                    tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-danger">
+                        Failed to load results
+                    </td>
+                </tr>
+            `;
+                });
+        }
+
+        // 🔍 Realtime search with debounce
+        searchInput.addEventListener("input", function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(liveSearch, 300);
         });
-    }
 
-    searchInput.addEventListener("keyup", filterTable);
-    categoryFilter.addEventListener("change", filterTable);
+        // 🏷 Category filter
+        categoryFilter.addEventListener("change", liveSearch);
+
+    });
 </script>
+
 
 {% endblock %}

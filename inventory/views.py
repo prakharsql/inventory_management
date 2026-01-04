@@ -18,6 +18,7 @@ from django.db.models import Q, CharField
 from django.db.models.functions import Cast
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 
 # Predefined categories for dropdown
 PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
@@ -423,12 +424,12 @@ def edit_item(request, item_id):
 
 
 def delete_item(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
-    item.delete()
-    messages.success(request, "Item deleted successfully!")
-    # ✅ keep user on same page
-    page = request.GET.get("page", 1)
-    return redirect(f"/inventory/?page={page}")
+    if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
+        item = get_object_or_404(Item, id=item_id)
+        item.delete()
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False}, status=400)
 
 
 # def add_stock(request, item_id):
@@ -515,23 +516,84 @@ def remove_stock(request, item_id):
 
 
 
-def transaction_history(request):
-    transactions_qs = (
-        Transaction.objects
-        .select_related('item')
-        .order_by('-date')
-    )
+# def transaction_history(request):
+#     transactions_qs = (
+#         Transaction.objects
+#         .select_related('item')
+#         .order_by('-date')
+#     )
 
-    paginator = Paginator(transactions_qs, 10)
-    page_number = request.GET.get('page')
+#     paginator = Paginator(transactions_qs, 10)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     context = {
+#         'page_obj': page_obj,
+#         'CATEGORIES': get_all_categories(),
+#     }
+
+#     return render(request, 'inventory/transaction_history.html', context)
+def transaction_history(request):
+    search = request.GET.get("search", "").strip()
+    category = request.GET.get("category", "").strip()
+
+    transactions = Transaction.objects.select_related("item").order_by("-date")
+
+    # 🔍 GLOBAL SEARCH (across fields)
+    if search:
+        transactions = transactions.filter(
+            Q(item__name__icontains=search) |
+            Q(item__category__icontains=search) |
+            Q(transaction_type__icontains=search)
+        )
+
+    # 🏷 CATEGORY FILTER
+    if category:
+        transactions = transactions.filter(item__category=category)
+
+    paginator = Paginator(transactions, 10)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
     context = {
-        'page_obj': page_obj,
-        'CATEGORIES': get_all_categories(),
+        "page_obj": page_obj,
+        "search": search,
+        "category": category,
+        "CATEGORIES": get_all_categories(),
     }
 
-    return render(request, 'inventory/transaction_history.html', context)
+    return render(request, "inventory/transaction_history.html", context)
+
+from django.db.models import Q
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+
+def transaction_live_search(request):
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
+
+    transactions = Transaction.objects.select_related("item").order_by("-date")
+
+    # 🔍 GLOBAL SEARCH
+    if query:
+        transactions = transactions.filter(
+            Q(item__name__icontains=query) |
+            Q(item__category__icontains=query) |
+            Q(transaction_type__icontains=query)
+        )
+
+    # 🏷 CATEGORY FILTER
+    if category:
+        transactions = transactions.filter(item__category=category)
+
+    html = render_to_string(
+        "inventory/partials/transaction_rows.html",
+        {"page_obj": transactions[:50]},  # limit for live search
+        request=request
+    )
+
+    return JsonResponse({"html": html})
+
 
 
 # ----------------------------- #

@@ -568,11 +568,12 @@
                                 onclick="return confirm('Are you sure you want to delete this item?')">
                                 <i class="fas fa-trash"></i>
                             </a> -->
-                            <a href="{% url 'delete_item' item.id %}?page={{ page_obj.number }}" class="action-btn"
-                                style="background: var(--danger);"
-                                onclick="return confirm('Are you sure you want to delete this item?')">
+                            <button class="action-btn js-delete-item" data-id="{{ item.id }}"
+                                data-url="{% url 'delete_item' item.id %}" title="Delete Item"
+                                style="background: var(--danger);">
                                 <i class="fas fa-trash"></i>
-                            </a>
+                            </button>
+
 
                             <a href="{% url 'add_stock' item.id %}?page={{ page_obj.number }}" class="action-btn"
                                 style="background: var(--success);" title="Add Stock">
@@ -675,6 +676,29 @@
         });
 
         categoryFilter.addEventListener("change", liveSearch);
+    });
+
+    document.addEventListener("click", function (e) {
+        const btn = e.target.closest(".js-delete-item");
+        if (!btn) return;
+
+        if (!confirm("Are you sure you want to delete this item?")) return;
+
+        fetch(btn.dataset.url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    btn.closest("tr").remove(); // 🔥 instant UI update
+                } else {
+                    alert(data.error || "Delete failed");
+                }
+            });
     });
 </script>
 {% endblock %}
