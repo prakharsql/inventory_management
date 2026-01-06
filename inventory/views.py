@@ -699,17 +699,59 @@ def issue_item(request):
     item.save()
 
      # 🔔 EMAIL (THIS MUST EXECUTE)
+       # 🔔 EMAIL (THIS MUST EXECUTE)
     notify_head(
         subject="📤 Component Issued",
         message=f"""
-Component Issued Successfully
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
 
-Item: {item.name}
-Quantity: {quantity}
-Issued By: {issuance.issuer}
-Receiver: {issuance.receiver}
-User: {issuance.user}
-Condition: {issuance.issue_condition}
+<div style="max-width:600px; background:#ffffff; padding:20px; border:1px solid #ddd;">
+    
+    <h2 style="color:#2e7d32; margin-bottom:10px;">
+        📦 Component Issued Successfully
+    </h2>
+
+    <p style="font-size:14px;">
+        The following component has been <strong>successfully issued</strong>.
+    </p>
+
+    <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse; font-size:14px;">
+        <tr>
+            <td><strong>Item</strong></td>
+            <td>{item.name}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Quantity</strong></td>
+            <td>{quantity}</td>
+        </tr>
+        <tr>
+            <td><strong>Issued By</strong></td>
+            <td>{issuance.issuer}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Receiver</strong></td>
+            <td>{issuance.receiver}</td>
+        </tr>
+        <tr>
+            <td><strong>User</strong></td>
+            <td>{issuance.user}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Condition</strong></td>
+            <td>{issuance.issue_condition.capitalize()}</td>
+        </tr>
+    </table>
+
+    <p style="margin-top:20px; font-size:13px; color:#555;">
+        🔔 Inventory Management System
+    </p>
+
+</div>
+
+</body>
+</html>
 """
     )
 
@@ -756,21 +798,60 @@ def receive_item(request):
         )
 
     # 📧 EMAIL TO HEAD
+        # 📧 EMAIL TO HEAD
     notify_head(
         subject="📥 Component Received",
         message=f"""
-Component Received
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color:#f4f6f8; padding:20px;">
 
-Item: {issuance.item.name}
-Quantity: {issuance.quantity}
-Issued By: {issuance.issuer}
-Receiver: {issuance.receiver}
-Status: {component_status.capitalize()}
-Remark: {remark or 'None'}
+<div style="max-width:600px; background:#ffffff; padding:20px; border:1px solid #ddd;">
 
-Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
+    <h2 style="color:#1565c0; margin-bottom:10px;">
+        📥 Component Received
+    </h2>
+
+    <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse; font-size:14px;">
+        <tr>
+            <td><strong>Item</strong></td>
+            <td>{issuance.item.name}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Quantity</strong></td>
+            <td>{issuance.quantity}</td>
+        </tr>
+        <tr>
+            <td><strong>Issued By</strong></td>
+            <td>{issuance.issuer}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Receiver</strong></td>
+            <td>{issuance.receiver}</td>
+        </tr>
+        <tr>
+            <td><strong>Status</strong></td>
+            <td>{component_status.capitalize()}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+            <td><strong>Remark</strong></td>
+            <td>{remark or "None"}</td>
+        </tr>
+    </table>
+
+    <p style="margin-top:20px; font-size:13px; color:#555;">
+        Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
+        <br>
+        🔔 Inventory Management System
+    </p>
+
+</div>
+
+</body>
+</html>
 """
     )
+
 
     messages.success(request, "Component received successfully.")
     return redirect("issuance_list")

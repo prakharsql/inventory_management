@@ -1,3 +1,4 @@
+
 """
 Django settings for backend project.
 
@@ -129,7 +130,6 @@ EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-EMAIL_HOST_USER = "rudranshkiller@gmail.com"
-EMAIL_HOST_PASSWORD = ""
+EMAIL_HOST_USER = "pdprakhar03@gmail.com"
+EMAIL_HOST_PASSWORD = "jqnx nbiv ytmb vzee"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
