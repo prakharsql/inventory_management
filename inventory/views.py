@@ -19,6 +19,12 @@ from django.db.models.functions import Cast
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+from django.contrib import messages
+from inventory.email import notify_head
+
 
 # Predefined categories for dropdown
 PREDEFINED_CATEGORIES = ["Sensor", "Connector", "Resistor", "Microcontroller"]
@@ -654,10 +660,7 @@ def item_autocomplete(request):
 # =====================================================
 # ISSUE ITEM (CREATE ISSUANCE) – SINGLE SOURCE OF TRUTH
 # =====================================================
-from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
-from django.contrib import messages
+
 
 @transaction.atomic
 def issue_item(request):
@@ -682,7 +685,7 @@ def issue_item(request):
         )
         return redirect("issuance_list")
 
-    Issuance.objects.create(
+    issuance =Issuance.objects.create(
         item=item,
         quantity=quantity,
         user=request.POST.get("user"),
@@ -694,6 +697,21 @@ def issue_item(request):
 
     item.quantity -= quantity
     item.save()
+
+     # 🔔 EMAIL (THIS MUST EXECUTE)
+    notify_head(
+        subject="📤 Component Issued",
+        message=f"""
+Component Issued Successfully
+
+Item: {item.name}
+Quantity: {quantity}
+Issued By: {issuance.issuer}
+Receiver: {issuance.receiver}
+User: {issuance.user}
+Condition: {issuance.issue_condition}
+"""
+    )
 
     messages.success(request, "Component issued successfully.")
     return redirect("issuance_list")
@@ -736,6 +754,23 @@ def receive_item(request):
         Item.objects.filter(id=issuance.item.id).update(
             quantity=F("quantity") + issuance.quantity
         )
+
+    # 📧 EMAIL TO HEAD
+    notify_head(
+        subject="📥 Component Received",
+        message=f"""
+Component Received
+
+Item: {issuance.item.name}
+Quantity: {issuance.quantity}
+Issued By: {issuance.issuer}
+Receiver: {issuance.receiver}
+Status: {component_status.capitalize()}
+Remark: {remark or 'None'}
+
+Time: {timezone.now().strftime('%d %b %Y, %H:%M')}
+"""
+    )
 
     messages.success(request, "Component received successfully.")
     return redirect("issuance_list")
